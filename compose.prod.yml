@@ -1,3 +1,4 @@
+# docker-compose.prod.yml
 services:
   web:
     build:
@@ -9,13 +10,27 @@ services:
       - "3000:3000"
     environment:
       NODE_ENV: production
+      NEXT_TELEMETRY_DISABLED: 1
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
-    env_file:
-      - .env
-    depends_on:
-      - server
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
     networks:
       - app_network
+    depends_on:
+      - server
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   server:
     build:
@@ -24,16 +39,30 @@ services:
     ports:
       - "9020:9020"
     environment:
+      - NODE_ENV=production
       - WVHOST=weaviate
       - WVPORT=8080
       - SERVERPORT=9020
       - GEMINI_API_KEY=${GEMINI_API_KEY}
     env_file:
       - .env
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
     volumes:
-      - ./server:/app/src
-      - ./.env:/app/.env
-    working_dir: /app
+      - server_data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9020/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     depends_on:
       weaviate:
         condition: service_healthy
@@ -50,19 +79,31 @@ services:
       PERSISTENCE_DATA_PATH: "/var/lib/weaviate"
       DEFAULT_VECTORIZER_MODULE: "none"
       CLUSTER_HOSTNAME: "node1"
+      ENABLE_MODULES: ""
     volumes:
       - weaviate_data:/var/lib/weaviate
-    networks:
-      - app_network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
     healthcheck:
       test: ["CMD", "wget", "--spider", "http://localhost:8080/v1/.well-known/ready"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - app_network
 
 volumes:
   weaviate_data:
-  web_node_modules:
+    driver: local
+  server_data:
+    driver: local
 
 networks:
   app_network:
