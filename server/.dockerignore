@@ -1,0 +1,46 @@
+# binaries and object files
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# go specific
+*.o
+*.a
+
+# output files
+university_data.json
+
+# misc
+.DS_Store
+*.log
+
+# local env files
+.env*
+
+# vscode
+.vscode
+
+# git
+.git
+.gitignore
+
+# temporary files
+tmp/
+temp/
+
+# test coverage
+coverage.out
+coverage.html
+
+# IDE specific
+.idea/
+*.swp
+*.swo
+
+# debug
+debug
+__debug_bin
