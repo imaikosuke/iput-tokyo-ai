@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/imaikosuke/iput-tokyo-ai/server/pkg/chunking"
+	"github.com/imaikosuke/iput-tokyo-ai/server/pkg/chunking/config"
 
 	"github.com/google/generative-ai-go/genai"
 	"github.com/weaviate/weaviate-go-client/v4/weaviate/graphql"
@@ -33,8 +34,26 @@ func (rs *ragServer) addDocumentsHandler(w http.ResponseWriter, req *http.Reques
 		return
 	}
 
+	// チャンカーの設定を構築
+	cfg, err := config.NewConfigBuilder().
+		WithMaxTokens(512).
+		WithMinTokens(100).
+		WithOverlapTokens(50).
+		WithJapaneseConfig(config.NewDefaultJapaneseConfig()).
+		Build()
+
+	if err != nil {
+		http.Error(w, fmt.Sprintf("configuring chunker: %v", err), http.StatusInternalServerError)
+		return
+	}
+
 	// チャンカーの初期化
-	chunker := chunking.NewDocumentChunker(nil) // デフォルト設定を使用
+	chunker, err := chunking.NewChunker(cfg)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("initializing chunker: %v", err), http.StatusInternalServerError)
+		return
+	}
+
 	var allObjects []*models.Object
 
 	// ドキュメントごとの処理
@@ -64,7 +83,7 @@ func (rs *ragServer) addDocumentsHandler(w http.ResponseWriter, req *http.Reques
 		// バッチembedding処理
 		rsp, err := rs.embModel.BatchEmbedContents(rs.ctx, batch)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf("batch embedding: %v", err), http.StatusInternalServerError)
 			return
 		}
 
@@ -84,6 +103,7 @@ func (rs *ragServer) addDocumentsHandler(w http.ResponseWriter, req *http.Reques
 					"startChar":   chunk.StartChar,
 					"endChar":     chunk.EndChar,
 					"tokenCount":  chunk.TokenCount,
+					"precedence":  chunk.Precedence,
 				},
 				Vector: rsp.Embeddings[i].Values,
 			}
@@ -95,7 +115,7 @@ func (rs *ragServer) addDocumentsHandler(w http.ResponseWriter, req *http.Reques
 	log.Printf("storing %v objects in weaviate", len(allObjects))
 	_, err = rs.wvClient.Batch().ObjectsBatcher().WithObjects(allObjects...).Do(rs.ctx)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("storing in weaviate: %v", err), http.StatusInternalServerError)
 		return
 	}
 
@@ -103,7 +123,6 @@ func (rs *ragServer) addDocumentsHandler(w http.ResponseWriter, req *http.Reques
 		"message": fmt.Sprintf("Successfully added %d document chunks", len(allObjects)),
 	})
 }
-
 func (rs *ragServer) queryHandler(w http.ResponseWriter, req *http.Request) {
 	type queryRequest struct {
 		Content string

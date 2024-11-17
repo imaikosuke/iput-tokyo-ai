@@ -1,3 +1,4 @@
+// server/cmd/chunking/main.go
 package main
 
 import (
@@ -9,6 +10,8 @@ import (
 	"strings"
 
 	"github.com/imaikosuke/iput-tokyo-ai/server/pkg/chunking"
+	"github.com/imaikosuke/iput-tokyo-ai/server/pkg/chunking/config"
+	"github.com/imaikosuke/iput-tokyo-ai/server/pkg/chunking/models"
 )
 
 // ChunkResult は1つのチャンクの結果を表示するための構造体
@@ -56,28 +59,35 @@ func main() {
 
 	flag.Parse()
 
-	// チャンカーの設定
-	japaneseConfig := &chunking.JapaneseConfig{
+	// 設定の構築
+	japaneseConfig := &config.JapaneseConfig{
 		SentenceEndings:   []string{"。", "！", "？", "…"},
 		Brackets:          []string{"（）", "「」", "『』", "［］"},
 		KeyParticleWeight: *keyParticleWeight,
 		TopicMarkerWeight: *topicMarkerWeight,
 	}
 
-	config := chunking.NewDefaultConfig().
+	// 設定のビルドとエラーハンドリング
+	cfg, err := config.NewConfigBuilder().
 		WithMaxTokens(*maxTokens).
 		WithMinTokens(*minTokens).
 		WithOverlapTokens(*overlapTokens).
 		WithParagraphSeparator(*paragraphSeparator).
-		WithJapaneseConfig(japaneseConfig)
+		WithJapaneseConfig(japaneseConfig).
+		WithListItemWeight(*listItemWeight).
+		WithCodeBlockWeight(*codeBlockWeight).
+		WithTableWeight(*tableWeight).
+		Build()
 
-	// 文書構造の重み付けを設定
-	config.ListItemWeight = *listItemWeight
-	config.CodeBlockWeight = *codeBlockWeight
-	config.TableWeight = *tableWeight
+	if err != nil {
+		log.Fatalf("Failed to build configuration: %v", err)
+	}
 
-	chunker := chunking.NewDocumentChunker(config)
-
+	// チャンカーの作成
+	chunker, err := chunking.NewChunker(cfg)
+	if err != nil {
+		log.Fatalf("Failed to create chunker: %v", err)
+	}
 	// 入力テキストの取得
 	inputText := getSampleOrFileContent(*inputFile)
 
@@ -88,6 +98,18 @@ func main() {
 	}
 
 	// 結果の表示用に構造体に変換
+	results := convertChunksToResults(chunks, *showMetadata, *showReferences)
+
+	// 結果の出力
+	if *outputFile != "" {
+		outputResults(results, *outputFile)
+	} else {
+		displayResults(results, chunker.GetConfig(), *verbose)
+	}
+}
+
+// convertChunksToResults はChunkをChunkResultに変換する
+func convertChunksToResults(chunks []models.Chunk, showMetadata, showReferences bool) []ChunkResult {
 	results := make([]ChunkResult, len(chunks))
 	for i, chunk := range chunks {
 		results[i] = ChunkResult{
@@ -98,23 +120,47 @@ func main() {
 			TokenCount: chunk.TokenCount,
 			Precedence: chunk.Precedence,
 		}
-		if *showMetadata {
+		if showMetadata {
 			results[i].Metadata = chunk.Metadata
 		}
-		if *showReferences {
+		if showReferences {
 			results[i].References = chunk.References
 		}
 	}
+	return results
+}
 
-	// 結果の出力
-	if *outputFile != "" {
-		outputResults(results, *outputFile)
-	} else {
-		displayResults(results, config, *verbose)
+// displayResults は結果をコンソールに表示する
+func displayResults(results []ChunkResult, cfg *config.ChunkConfig, verbose bool) {
+	fmt.Println("Configuration:")
+	displayConfig(cfg)
+
+	fmt.Printf("\nFound %d chunks:\n\n", len(results))
+	for _, result := range results {
+		displayChunk(result, verbose)
 	}
 }
 
-// getSampleOrFileContent は入力テキストを取得する
+// displayConfig は設定情報を表示する
+func displayConfig(cfg *config.ChunkConfig) {
+	fmt.Printf("Basic Settings:\n")
+	fmt.Printf("- Max Tokens: %d\n", cfg.MaxTokens)
+	fmt.Printf("- Min Tokens: %d\n", cfg.MinTokens)
+	fmt.Printf("- Overlap Tokens: %d\n", cfg.OverlapTokens)
+
+	if cfg.JapaneseConfig != nil {
+		fmt.Printf("\nJapanese Processing:\n")
+		fmt.Printf("- Key Particle Weight: %.2f\n", cfg.JapaneseConfig.KeyParticleWeight)
+		fmt.Printf("- Topic Marker Weight: %.2f\n", cfg.JapaneseConfig.TopicMarkerWeight)
+	}
+
+	fmt.Printf("\nStructure Weights:\n")
+	fmt.Printf("- List Items: %.2f\n", cfg.ListItemWeight)
+	fmt.Printf("- Code Blocks: %.2f\n", cfg.CodeBlockWeight)
+	fmt.Printf("- Tables: %.2f\n", cfg.TableWeight)
+}
+
+// 他のヘルパー関数は変更なし
 func getSampleOrFileContent(inputFile string) string {
 	if inputFile != "" {
 		content, err := os.ReadFile(inputFile)
@@ -126,7 +172,6 @@ func getSampleOrFileContent(inputFile string) string {
 	return getSampleText()
 }
 
-// outputResults は結果をJSONファイルに出力する
 func outputResults(results []ChunkResult, outputFile string) {
 	jsonData, err := json.MarshalIndent(results, "", "  ")
 	if err != nil {
@@ -138,54 +183,6 @@ func outputResults(results []ChunkResult, outputFile string) {
 		log.Fatalf("Failed to write output file: %v", err)
 	}
 	fmt.Printf("Results written to %s\n", outputFile)
-}
-
-// displayResults は結果をコンソールに表示する
-func displayResults(results []ChunkResult, config *chunking.ChunkConfig, verbose bool) {
-	fmt.Println("Configuration:")
-	displayConfig(config)
-
-	fmt.Printf("\nFound %d chunks:\n\n", len(results))
-	for _, result := range results {
-		fmt.Printf("Chunk %d:\n", result.Index+1)
-		fmt.Printf("- Tokens: %d\n", result.TokenCount)
-		fmt.Printf("- Position: %d-%d\n", result.StartChar, result.EndChar)
-
-		if verbose {
-			fmt.Printf("- Precedence: %d\n", result.Precedence)
-			if len(result.References) > 0 {
-				fmt.Printf("- Heading Path: %s\n", strings.Join(result.References, " > "))
-			}
-			if len(result.Metadata) > 0 {
-				fmt.Println("- Metadata:")
-				for k, v := range result.Metadata {
-					fmt.Printf("  %s: %s\n", k, v)
-				}
-			}
-		}
-
-		fmt.Printf("Content:\n%s\n", strings.TrimSpace(result.Content))
-		fmt.Println(strings.Repeat("-", 80))
-	}
-}
-
-// displayConfig は設定情報を表示する
-func displayConfig(config *chunking.ChunkConfig) {
-	fmt.Printf("Basic Settings:\n")
-	fmt.Printf("- Max Tokens: %d\n", config.MaxTokens)
-	fmt.Printf("- Min Tokens: %d\n", config.MinTokens)
-	fmt.Printf("- Overlap Tokens: %d\n", config.OverlapTokens)
-
-	if config.JapaneseConfig != nil {
-		fmt.Printf("\nJapanese Processing:\n")
-		fmt.Printf("- Key Particle Weight: %.2f\n", config.JapaneseConfig.KeyParticleWeight)
-		fmt.Printf("- Topic Marker Weight: %.2f\n", config.JapaneseConfig.TopicMarkerWeight)
-	}
-
-	fmt.Printf("\nStructure Weights:\n")
-	fmt.Printf("- List Items: %.2f\n", config.ListItemWeight)
-	fmt.Printf("- Code Blocks: %.2f\n", config.CodeBlockWeight)
-	fmt.Printf("- Tables: %.2f\n", config.TableWeight)
 }
 
 // displayChunk は個々のチャンク情報を表示する
