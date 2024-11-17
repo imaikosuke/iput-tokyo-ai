@@ -44,6 +44,8 @@ iput-tokyo-ai % tree -I "node_modules|.git|.next" -a
 │   ├── .dockerignore
 │   ├── Dockerfile
 │   ├── cmd
+│   │   ├── chunking
+│   │   │   └── main.go
 │   │   └── mdconvert
 │   │       └── main.go
 │   ├── content
@@ -63,6 +65,11 @@ iput-tokyo-ai % tree -I "node_modules|.git|.next" -a
 │   ├── handlers.go
 │   ├── json.go
 │   ├── main.go
+│   ├── pkg
+│   │   └── chunking
+│   │       ├── chunker.go
+│   │       └── config.go
+│   ├── server
 │   ├── template.go
 │   ├── universitydocs
 │   │   └── types.go
@@ -88,6 +95,8 @@ iput-tokyo-ai % tree -I "node_modules|.git|.next" -a
     │   └── window.svg
     ├── src
     │   ├── app
+    │   │   ├── chunk-visuallzer
+    │   │   │   └── page.tsx
     │   │   ├── favicon.ico
     │   │   ├── fonts
     │   │   │   ├── GeistMonoVF.woff
@@ -99,6 +108,7 @@ iput-tokyo-ai % tree -I "node_modules|.git|.next" -a
     │   │   └── ui
     │   │       ├── alert.tsx
     │   │       ├── button.tsx
+    │   │       ├── card.tsx
     │   │       ├── form.tsx
     │   │       ├── input.tsx
     │   │       ├── label.tsx
@@ -111,7 +121,7 @@ iput-tokyo-ai % tree -I "node_modules|.git|.next" -a
     ├── tailwind.config.ts
     └── tsconfig.json
 
-18 directories, 61 files
+22 directories, 67 files
 ```
 
 iput-tokyo-ai/server/Dockerfile

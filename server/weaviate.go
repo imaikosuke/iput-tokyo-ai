@@ -12,7 +12,6 @@ import (
 	"github.com/weaviate/weaviate/entities/models"
 )
 
-// Weaviateクライアントの初期化
 func initWeaviate(ctx context.Context) (*weaviate.Client, error) {
 	host := cmp.Or(os.Getenv("WVHOST"), "weaviate")
 	port := cmp.Or(os.Getenv("WVPORT"), "8080")
@@ -54,10 +53,27 @@ func initWeaviate(ctx context.Context) (*weaviate.Client, error) {
 				Name:     "updatedAt",
 				DataType: []string{"string"},
 			},
-			// {
-			// 	Name:     "text",
-			// 	DataType: []string{"text"},
-			// },
+			// チャンク関連の新しいプロパティ
+			{
+				Name:     "chunkIndex",
+				DataType: []string{"int"},
+			},
+			{
+				Name:     "totalChunks",
+				DataType: []string{"int"},
+			},
+			{
+				Name:     "startChar",
+				DataType: []string{"int"},
+			},
+			{
+				Name:     "endChar",
+				DataType: []string{"int"},
+			},
+			{
+				Name:     "tokenCount",
+				DataType: []string{"int"},
+			},
 		},
 	}
 
@@ -76,7 +92,7 @@ func initWeaviate(ctx context.Context) (*weaviate.Client, error) {
 		}
 
 		log.Printf("Failed to connect to Weaviate (attempt %d/%d): %v", i+1, maxRetries, err)
-		time.Sleep(time.Second * 2) // 2秒待ってリトライ
+		time.Sleep(time.Second * 2)
 	}
 
 	return nil, fmt.Errorf("failed to initialize Weaviate after %d attempts", maxRetries)

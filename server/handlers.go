@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/imaikosuke/iput-tokyo-ai/server/pkg/chunking"
+
 	"github.com/google/generative-ai-go/genai"
 	"github.com/weaviate/weaviate-go-client/v4/weaviate/graphql"
 	"github.com/weaviate/weaviate/entities/models"
@@ -31,55 +33,74 @@ func (rs *ragServer) addDocumentsHandler(w http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	// バッチembedding処理
-	batch := rs.embModel.NewBatch()
+	// チャンカーの初期化
+	chunker := chunking.NewDocumentChunker(nil) // デフォルト設定を使用
+	var allObjects []*models.Object
+
+	// ドキュメントごとの処理
 	for _, doc := range addRequestDocuments.Documents {
-		fullText := fmt.Sprintf("Title: %s\nCategory: %s\nDepartment: %s\nContent: %s",
-			doc.Title, doc.Category, doc.Department, doc.Content)
-		batch.AddContent(genai.Text(fullText))
-	}
+		// コンテンツをチャンクに分割
+		chunks, err := chunker.ChunkDocument(doc.Content)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("chunking document: %v", err), http.StatusInternalServerError)
+			return
+		}
+		log.Printf("Document '%s' was split into %d chunks", doc.Title, len(chunks))
+		for i, chunk := range chunks {
+			log.Printf("Chunk %d: %d tokens, %d-%d chars",
+				i, chunk.TokenCount, chunk.StartChar, chunk.EndChar)
+		}
 
-	log.Printf("invoking embedding model with %v documents", len(addRequestDocuments.Documents))
-	rsp, err := rs.embModel.BatchEmbedContents(rs.ctx, batch)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	if len(rsp.Embeddings) != len(addRequestDocuments.Documents) {
-		http.Error(w, "embedded batch size mismatch", http.StatusInternalServerError)
-		return
-	}
-	log.Printf("Generated embeddings for %d documents, vector length: %d",
-		len(rsp.Embeddings),
-		len(rsp.Embeddings[0].Values))
+		// チャンクごとのembedding用バッチを作成
+		batch := rs.embModel.NewBatch()
+		for _, chunk := range chunks {
+			fullText := fmt.Sprintf(
+				"Title: %s\nCategory: %s\nDepartment: %s\nContent: %s",
+				doc.Title, doc.Category, doc.Department, chunk.Content,
+			)
+			batch.AddContent(genai.Text(fullText))
+		}
 
-	// Weaviateオブジェクトの作成
-	objects := make([]*models.Object, len(addRequestDocuments.Documents))
-	for i, doc := range addRequestDocuments.Documents {
-		objects[i] = &models.Object{
-			Class: "Document",
-			Properties: map[string]any{
-				"title":      doc.Title,
-				"content":    doc.Content,
-				"category":   doc.Category,
-				"tags":       doc.Tags,
-				"department": doc.Department,
-				"updatedAt":  doc.UpdatedAt,
-			},
-			Vector: rsp.Embeddings[i].Values,
+		// バッチembedding処理
+		rsp, err := rs.embModel.BatchEmbedContents(rs.ctx, batch)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		// チャンクごとにWeaviateオブジェクトを作成
+		for i, chunk := range chunks {
+			obj := &models.Object{
+				Class: "Document",
+				Properties: map[string]any{
+					"title":       doc.Title,
+					"content":     chunk.Content,
+					"category":    doc.Category,
+					"tags":        doc.Tags,
+					"department":  doc.Department,
+					"updatedAt":   doc.UpdatedAt,
+					"chunkIndex":  chunk.Index,
+					"totalChunks": len(chunks),
+					"startChar":   chunk.StartChar,
+					"endChar":     chunk.EndChar,
+					"tokenCount":  chunk.TokenCount,
+				},
+				Vector: rsp.Embeddings[i].Values,
+			}
+			allObjects = append(allObjects, obj)
 		}
 	}
 
 	// Weaviateへの保存
-	log.Printf("storing %v objects in weaviate", len(objects))
-	_, err = rs.wvClient.Batch().ObjectsBatcher().WithObjects(objects...).Do(rs.ctx)
+	log.Printf("storing %v objects in weaviate", len(allObjects))
+	_, err = rs.wvClient.Batch().ObjectsBatcher().WithObjects(allObjects...).Do(rs.ctx)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	renderJSON(w, map[string]interface{}{
-		"message": fmt.Sprintf("Successfully added %d documents", len(addRequestDocuments.Documents)),
+		"message": fmt.Sprintf("Successfully added %d document chunks", len(allObjects)),
 	})
 }
 
@@ -101,7 +122,7 @@ func (rs *ragServer) queryHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// Weaviateでの類似検索
+	// Weaviateでの類似検索（上位3チャンクを取得）
 	gql := rs.wvClient.GraphQL()
 	result, err := gql.Get().
 		WithClassName("Document").
@@ -110,15 +131,17 @@ func (rs *ragServer) queryHandler(w http.ResponseWriter, req *http.Request) {
 			graphql.Field{Name: "content"},
 			graphql.Field{Name: "category"},
 			graphql.Field{Name: "department"},
+			graphql.Field{Name: "chunkIndex"},
+			graphql.Field{Name: "totalChunks"},
 			graphql.Field{Name: "_additional", Fields: []graphql.Field{
 				{Name: "certainty"},
 			}},
 		).
 		WithNearVector(
-			gql.NearVectorArgBuilder().
-				WithVector(rsp.Embedding.Values).
-				WithCertainty(0.5)).
-		WithLimit(1).
+				gql.NearVectorArgBuilder().
+					WithVector(rsp.Embedding.Values).
+					WithCertainty(0.5)).
+		WithLimit(3). // 上位3チャンクを取得
 		Do(rs.ctx)
 
 	log.Printf("Query response: %+v", result.Data)
@@ -132,7 +155,7 @@ func (rs *ragServer) queryHandler(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, fmt.Errorf("reading weaviate response: %w", err).Error(), http.StatusInternalServerError)
 		return
 	}
-	log.Printf("Retrieved %d relevant documents from Weaviate", len(contents))
+	log.Printf("Retrieved %d relevant chunks from Weaviate", len(contents))
 
 	// RAGクエリの生成と実行
 	ragQuery := fmt.Sprintf(GetRAGTemplate(), qr.Content, strings.Join(contents, "\n\n---\n\n"))
