@@ -69,8 +69,8 @@ iput-tokyo-ai % tree -I "node_modules|.git|.next" -a
 │   │   └── chunking
 │   │       ├── chunker.go
 │   │       └── config.go
-│   ├── server
 │   ├── template.go
+│   ├── university_data.json
 │   ├── universitydocs
 │   │   └── types.go
 │   ├── utils.go
