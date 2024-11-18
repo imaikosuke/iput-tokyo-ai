@@ -36,10 +36,11 @@ iput-tokyo-ai % tree -I "node_modules|.git|.next" -a
 ├── .env.example
 ├── .gitignore
 ├── Makefile
-├── PRONMPT.md
+├── PROMPT.md
 ├── README.md
 ├── compose.prod.yml
 ├── compose.yml
+├── copyfiles
 ├── server
 │   ├── .dockerignore
 │   ├── Dockerfile
@@ -139,7 +140,7 @@ iput-tokyo-ai % tree -I "node_modules|.git|.next" -a
     ├── tailwind.config.ts
     └── tsconfig.json
 
-26 directories, 81 files
+26 directories, 82 files
 ```
 
 iput-tokyo-ai/server/Dockerfile
@@ -308,7 +309,7 @@ networks:
 iput-tokyo-ai/Makefile
 
 ```makefile
-.PHONY: check-env setup run stop clean build-data re dev build
+.PHONY: check-env setup run stop clean build-data re dev build rebuild copy-files
 
 # 環境変数のチェック
 check-env:
@@ -370,11 +371,26 @@ re:
 	make clean
 	make dev
 
+# サーバーの再ビルドと起動
+rebuild:
+	@echo "Rebuilding server and starting application..."
+	docker compose down
+	docker compose build --no-cache server
+	make dev
+
 # 依存関係の更新
 update-deps:
 	@echo "Updating dependencies..."
 	cd web && pnpm update
 	cd server && go get -u ./...
+
+copy-files:
+	@if [ -z "$(dir)" ]; then \
+		echo "Error: ディレクトリを指定してください (例: make copy-files dir=server/cmd)"; \
+		exit 1; \
+	fi
+	@./copyfiles $(dir)
+
 
 ```
 
