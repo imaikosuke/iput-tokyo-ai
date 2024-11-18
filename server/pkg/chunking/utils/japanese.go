@@ -46,7 +46,7 @@ func (jp *JapaneseProcessor) SplitJapaneseSentences(text string) []string {
 		current.WriteRune(runes[i])
 
 		// 文末かどうかをチェック
-		if i+1 < len(runes) && jp.isSentenceEnd(string(runes[i])) {
+		if i+1 < len(runes) && jp.IsSentenceEnd(string(runes[i])) {
 			sentences = append(sentences, strings.TrimSpace(current.String()))
 			current.Reset()
 		}
@@ -67,7 +67,7 @@ func (jp *JapaneseProcessor) CountJapaneseTokens(text string) int {
 
 	// 文字ごとに処理
 	for _, r := range text {
-		if jp.isJapaneseCharacter(r) {
+		if jp.IsJapaneseCharacter(r) {
 			tokenCount++
 		} else if !unicode.IsSpace(r) {
 			// 英数字などは1文字を1トークンとしてカウント
@@ -98,8 +98,8 @@ func (jp *JapaneseProcessor) IsTopicMarker(word string) bool {
 	return false
 }
 
-// isSentenceEnd は文字が文末表現かどうかを判定
-func (jp *JapaneseProcessor) isSentenceEnd(char string) bool {
+// IsSentenceEnd は文字が文末表現かどうかを判定
+func (jp *JapaneseProcessor) IsSentenceEnd(char string) bool {
 	for _, sep := range jp.Separators {
 		if char == sep {
 			return true
@@ -108,8 +108,8 @@ func (jp *JapaneseProcessor) isSentenceEnd(char string) bool {
 	return false
 }
 
-// isJapaneseCharacter は文字が日本語文字かどうかを判定
-func (jp *JapaneseProcessor) isJapaneseCharacter(r rune) bool {
+// IsJapaneseCharacter は文字が日本語文字かどうかを判定
+func (jp *JapaneseProcessor) IsJapaneseCharacter(r rune) bool {
 	return unicode.In(r, unicode.Hiragana) ||
 		unicode.In(r, unicode.Katakana) ||
 		unicode.In(r, unicode.Han)

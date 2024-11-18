@@ -15,6 +15,7 @@ import (
 )
 
 func (rs *ragServer) addDocumentsHandler(w http.ResponseWriter, req *http.Request) {
+	log.Printf("Starting addDocumentsHandler")
 	type document struct {
 		Title      string   `json:"title"`
 		Content    string   `json:"content"`
@@ -57,10 +58,14 @@ func (rs *ragServer) addDocumentsHandler(w http.ResponseWriter, req *http.Reques
 	var allObjects []*models.Object
 
 	// ドキュメントごとの処理
-	for _, doc := range addRequestDocuments.Documents {
+	for i, doc := range addRequestDocuments.Documents {
+		log.Printf("Processing document %d: %s", i, doc.Title)
+		log.Printf("Document content length: %d", len(doc.Content))
+
 		// コンテンツをチャンクに分割
 		chunks, err := chunker.ChunkDocument(doc.Content)
 		if err != nil {
+			log.Printf("Error chunking document: %v", err)
 			http.Error(w, fmt.Sprintf("chunking document: %v", err), http.StatusInternalServerError)
 			return
 		}
@@ -159,8 +164,8 @@ func (rs *ragServer) queryHandler(w http.ResponseWriter, req *http.Request) {
 		WithNearVector(
 				gql.NearVectorArgBuilder().
 					WithVector(rsp.Embedding.Values).
-					WithCertainty(0.5)).
-		WithLimit(3). // 上位3チャンクを取得
+					WithCertainty(0.7)).
+		WithLimit(5).
 		Do(rs.ctx)
 
 	log.Printf("Query response: %+v", result.Data)

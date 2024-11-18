@@ -67,5 +67,8 @@ func NewDefaultConfig() *ChunkConfig {
 		BasePrecedence: 100,
 		ContentFactor:  0.01,
 		DepthFactor:    -0.2,
+
+		// 日本語固有の設定を追加
+		JapaneseConfig: NewDefaultJapaneseConfig(),
 	}
 }

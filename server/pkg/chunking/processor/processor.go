@@ -2,6 +2,9 @@
 package processor
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/imaikosuke/iput-tokyo-ai/server/pkg/chunking/config"
 	"github.com/imaikosuke/iput-tokyo-ai/server/pkg/chunking/models"
 )
@@ -31,27 +34,47 @@ func NewDocumentProcessor(cfg *config.ChunkConfig) *DocumentProcessor {
 
 // Process はドキュメントの処理を実行
 func (p *DocumentProcessor) Process(content string) ([]models.Chunk, error) {
+	// コンテンツの基本的なバリデーション
+	if len(strings.TrimSpace(content)) == 0 {
+		return nil, fmt.Errorf("empty content provided")
+	}
+
 	// Front Matterの抽出
 	metadata, mainContent, err := p.extractor.Extract(content)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("front matter extraction failed: %w", err)
 	}
 
 	// コンテンツのチャンキング
 	chunks, err := p.chunker.Chunk(mainContent)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("content chunking failed: %w", err)
 	}
 
-	// メタデータの付与
+	// チャンクが生成されなかった場合のチェック
+	if len(chunks) == 0 {
+		return nil, fmt.Errorf("no chunks generated from content")
+	}
+
+	// メタデータとインデックスの設定
+	currentPosition := 0
 	for i := range chunks {
+		// メタデータの設定
 		for k, v := range metadata {
 			chunks[i].SetMetadata(k, v)
 		}
+
+		// インデックスと位置情報の設定
+		chunks[i].Index = i
+		chunks[i].StartChar = currentPosition
+		chunks[i].EndChar = currentPosition + len(chunks[i].Content)
+		currentPosition = chunks[i].EndChar + len(p.config.ParagraphSeparator)
 	}
 
 	// チャンクの結合
-	mergedChunks := p.merger.Merge(chunks)
+	if !p.config.PreserveSections {
+		chunks = p.merger.Merge(chunks)
+	}
 
-	return mergedChunks, nil
+	return chunks, nil
 }

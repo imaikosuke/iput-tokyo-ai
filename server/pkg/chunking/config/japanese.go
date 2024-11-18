@@ -5,10 +5,8 @@ package config
 type JapaneseConfig struct {
 	// 文の区切り文字
 	SentenceEndings []string `json:"sentenceEndings"` // 文末表現のリスト
-
 	// 特殊な区切り文字
 	Brackets []string `json:"brackets"` // 括弧のペアリスト
-
 	// 重要度の重み付け
 	KeyParticleWeight float64 `json:"keyParticleWeight"` // 重要な助詞の重み
 	TopicMarkerWeight float64 `json:"topicMarkerWeight"` // トピックマーカーの重み

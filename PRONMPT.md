@@ -68,7 +68,25 @@ iput-tokyo-ai % tree -I "node_modules|.git|.next" -a
 │   ├── pkg
 │   │   └── chunking
 │   │       ├── chunker.go
-│   │       └── config.go
+│   │       ├── config
+│   │       │   ├── builder.go
+│   │       │   ├── config.go
+│   │       │   ├── japanese.go
+│   │       │   └── validation.go
+│   │       ├── errors.go
+│   │       ├── models
+│   │       │   ├── chunk.go
+│   │       │   └── section.go
+│   │       ├── processor
+│   │       │   ├── chunker.go
+│   │       │   ├── extractor.go
+│   │       │   ├── merger.go
+│   │       │   └── processor.go
+│   │       └── utils
+│   │           ├── constants.go
+│   │           ├── errors.go
+│   │           ├── japanese.go
+│   │           └── text.go
 │   ├── template.go
 │   ├── university_data.json
 │   ├── universitydocs
@@ -121,12 +139,12 @@ iput-tokyo-ai % tree -I "node_modules|.git|.next" -a
     ├── tailwind.config.ts
     └── tsconfig.json
 
-22 directories, 67 files
+26 directories, 81 files
 ```
 
 iput-tokyo-ai/server/Dockerfile
 
-```
+```dockerfile
 FROM golang:1.23 AS builder
 
 WORKDIR /build
@@ -150,7 +168,7 @@ CMD ["./main"]
 
 iput-tokyo-ai/web/Dockerfile
 
-```
+```dockerfile
 # syntax=docker.io/docker/dockerfile:1
 
 FROM node:20-alpine AS base
@@ -214,7 +232,7 @@ CMD ["node", "server.js"]
 
 iput-tokyo-ai/compose.yml
 
-```
+```yml
 services:
   web:
     build:
@@ -289,7 +307,7 @@ networks:
 
 iput-tokyo-ai/Makefile
 
-```
+```makefile
 .PHONY: check-env setup run stop clean build-data re dev build
 
 # 環境変数のチェック
