@@ -1,4 +1,4 @@
-.PHONY: check-env setup run stop clean build-data re dev build rebuild
+.PHONY: check-env setup run stop clean build-data re dev build rebuild copy-files
 
 # 環境変数のチェック
 check-env:
@@ -72,3 +72,10 @@ update-deps:
 	@echo "Updating dependencies..."
 	cd web && pnpm update
 	cd server && go get -u ./...
+
+copy-files:
+	@if [ -z "$(dir)" ]; then \
+		echo "Error: ディレクトリを指定してください (例: make copy-files dir=server/cmd)"; \
+		exit 1; \
+	fi
+	@./copyfiles $(dir)
