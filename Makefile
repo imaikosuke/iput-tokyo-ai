@@ -1,4 +1,4 @@
-.PHONY: check-env setup run stop clean build-data re dev build
+.PHONY: check-env setup run stop clean build-data re dev build rebuild
 
 # 環境変数のチェック
 check-env:
@@ -58,6 +58,13 @@ build-data:
 re:
 	@echo "Restarting application in development mode..."
 	make clean
+	make dev
+
+# サーバーの再ビルドと起動
+rebuild:
+	@echo "Rebuilding server and starting application..."
+	docker compose down
+	docker compose build --no-cache server
 	make dev
 
 # 依存関係の更新
