@@ -6,6 +6,21 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 export default function Header() {
+  const scrollToSection = (sectionId: string) => {
+    const section = document.getElementById(sectionId);
+    const header = document.querySelector("header");
+
+    if (section && header) {
+      const headerHeight = header.offsetHeight;
+      const sectionTop = section.offsetTop - headerHeight;
+
+      window.scrollTo({
+        top: sectionTop,
+        behavior: "smooth",
+      });
+    }
+  };
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50">
       <div className="mx-auto px-4 sm:px-6 lg:px-8">
@@ -25,15 +40,24 @@ export default function Header() {
 
             {/* Navigation Links */}
             <nav className="hidden md:flex space-x-16">
-              <Link href="#" className="text-lg font-medium text-gray-700 hover:text-gray-900">
+              <button
+                onClick={() => scrollToSection("about")}
+                className="text-lg font-medium text-gray-700 hover:text-gray-900"
+              >
                 About
-              </Link>
-              <Link href="#" className="text-lg font-medium text-gray-700 hover:text-gray-900">
+              </button>
+              <button
+                onClick={() => scrollToSection("problem")}
+                className="text-lg font-medium text-gray-700 hover:text-gray-900"
+              >
                 Problem
-              </Link>
-              <Link href="#" className="text-lg font-medium text-gray-700 hover:text-gray-900">
+              </button>
+              <button
+                onClick={() => scrollToSection("development")}
+                className="text-lg font-medium text-gray-700 hover:text-gray-900"
+              >
                 Development
-              </Link>
+              </button>
             </nav>
 
             {/* Let's Start Button */}
