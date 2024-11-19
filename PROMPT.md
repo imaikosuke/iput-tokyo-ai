@@ -107,13 +107,19 @@ iput-tokyo-ai % tree -I "node_modules|.git|.next" -a
     ├── pnpm-lock.yaml
     ├── postcss.config.mjs
     ├── public
+    │   ├── about-section.png
+    │   ├── development-section.png
     │   ├── file.svg
     │   ├── globe.svg
+    │   ├── iput-logo.png
     │   ├── next.svg
+    │   ├── problem-section.png
     │   ├── vercel.svg
     │   └── window.svg
     ├── src
     │   ├── app
+    │   │   ├── application
+    │   │   │   └── page.tsx
     │   │   ├── chunk-visuallzer
     │   │   │   └── page.tsx
     │   │   ├── favicon.ico
@@ -124,8 +130,20 @@ iput-tokyo-ai % tree -I "node_modules|.git|.next" -a
     │   │   ├── layout.tsx
     │   │   └── page.tsx
     │   ├── components
+    │   │   ├── layout
+    │   │   │   ├── About.tsx
+    │   │   │   ├── Development.tsx
+    │   │   │   ├── Footer.tsx
+    │   │   │   ├── Header.tsx
+    │   │   │   ├── Hero.tsx
+    │   │   │   ├── HomePageLayout.tsx
+    │   │   │   └── Problem.tsx
+    │   │   ├── parts
+    │   │   │   ├── GradationText.tsx
+    │   │   │   └── icons.tsx
     │   │   └── ui
     │   │       ├── alert.tsx
+    │   │       ├── badge.tsx
     │   │       ├── button.tsx
     │   │       ├── card.tsx
     │   │       ├── form.tsx
@@ -133,6 +151,10 @@ iput-tokyo-ai % tree -I "node_modules|.git|.next" -a
     │   │       ├── label.tsx
     │   │       └── textarea.tsx
     │   ├── features
+    │   │   ├── home
+    │   │   │   ├── AppButton.tsx
+    │   │   │   ├── AppLogo.tsx
+    │   │   │   └── CircleIcon.tsx
     │   │   └── question
     │   │       └── QuestionForm.tsx
     │   └── lib
@@ -140,7 +162,7 @@ iput-tokyo-ai % tree -I "node_modules|.git|.next" -a
     ├── tailwind.config.ts
     └── tsconfig.json
 
-26 directories, 82 files
+30 directories, 100 files
 ```
 
 iput-tokyo-ai/server/Dockerfile
