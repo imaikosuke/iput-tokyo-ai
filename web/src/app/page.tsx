@@ -1,11 +1,20 @@
 // src/app/page.tsx
-import { QuestionForm } from "@/features/question/QuestionForm";
+
+import { HomePageLayout } from "@/components/layout/HomePageLayout";
+import Hero from "@/components/layout/Hero";
+import About from "@/components/layout/About";
+import Problem from "@/components/layout/Problem";
+import Development from "@/components/layout/Development";
 
 export default function Home() {
   return (
-    <main className="container mx-auto p-4 max-w-3xl">
-      <h1 className="text-2xl font-bold mb-6">東京国際工科専門職大学 Q&A</h1>
-      <QuestionForm />
-    </main>
+    <HomePageLayout>
+      <div className="grid gap-8">
+        <Hero />
+        <About />
+        <Problem />
+        <Development />
+      </div>
+    </HomePageLayout>
   );
 }
