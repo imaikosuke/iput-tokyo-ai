@@ -3,8 +3,16 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "東京国際工科専門職大学 Q&A",
+  title: "AIPUT TOKYO",
   description: "大学に関する質問に AI がお答えします",
+  icons: {
+    icon: [
+      {
+        url: "/iput-logo.png",
+        type: "image/png",
+      }
+    ]
+  }
 };
 
 export default function RootLayout({
