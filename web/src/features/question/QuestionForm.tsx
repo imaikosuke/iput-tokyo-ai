@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
+import ReactMarkdown from "react-markdown";
 
 const formSchema = z.object({
   question: z.string().min(1, "質問を入力してください"),
@@ -88,7 +89,9 @@ export function QuestionForm() {
       {answer && (
         <div className="border rounded-md p-4 bg-gray-50">
           <h2 className="font-medium mb-2">回答:</h2>
-          <div className="whitespace-pre-wrap">{answer}</div>
+          <div className="whitespace-pre-wrap">
+            <ReactMarkdown>{answer}</ReactMarkdown>
+          </div>
         </div>
       )}
 
