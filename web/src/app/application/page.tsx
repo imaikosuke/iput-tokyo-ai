@@ -1,11 +1,14 @@
 // src/app/application/page.tsx
-import { QuestionForm } from "@/features/question/QuestionForm";
+import ApplicationLayout from "@/features/application/ApplicationLayout";
+import ApplicationTitle from "@/features/application/ApplicationTitle";
 
-export default function Application() {
+export default function ApplicationPage() {
   return (
-    <main className="container mx-auto p-4 max-w-3xl">
-      <h1 className="text-2xl font-bold mb-6">東京国際工科専門職大学 Q&A</h1>
-      <QuestionForm />
+    <main className="flex min-h-screen bg-gradient-to-b from-blue-200 to-white p-8">
+      <div className="w-full max-w-6xl mx-auto flex flex-col">
+        <ApplicationTitle />
+        <ApplicationLayout />
+      </div>
     </main>
   );
 }
