@@ -149,20 +149,25 @@ iput-tokyo-ai % tree -I "node_modules|.git|.next" -a
     │   │       ├── form.tsx
     │   │       ├── input.tsx
     │   │       ├── label.tsx
+    │   │       ├── skeleton.tsx
     │   │       └── textarea.tsx
     │   ├── features
-    │   │   ├── home
-    │   │   │   ├── AppButton.tsx
-    │   │   │   ├── AppLogo.tsx
-    │   │   │   └── CircleIcon.tsx
-    │   │   └── question
-    │   │       └── QuestionForm.tsx
+    │   │   ├── application
+    │   │   │   ├── AnswerDisplay.tsx
+    │   │   │   ├── ApplicationLayout.tsx
+    │   │   │   ├── ApplicationTitle.tsx
+    │   │   │   ├── FAQTemplates.tsx
+    │   │   │   └── QuestionForm.tsx
+    │   │   └── home
+    │   │       ├── AppButton.tsx
+    │   │       ├── AppLogo.tsx
+    │   │       └── CircleIcon.tsx
     │   └── lib
     │       └── utils.ts
     ├── tailwind.config.ts
     └── tsconfig.json
 
-30 directories, 100 files
+30 directories, 105 files
 ```
 
 iput-tokyo-ai/server/Dockerfile
@@ -331,7 +336,7 @@ networks:
 iput-tokyo-ai/Makefile
 
 ```makefile
-.PHONY: check-env setup run stop clean build-data re dev build rebuild copy-files
+.PHONY: check-env setup run stop clean build-data re dev build rebuild-server rebuild-web copy-files
 
 # 環境変数のチェック
 check-env:
@@ -394,10 +399,17 @@ re:
 	make dev
 
 # サーバーの再ビルドと起動
-rebuild:
+rebuild-server:
 	@echo "Rebuilding server and starting application..."
 	docker compose down
 	docker compose build --no-cache server
+	make dev
+
+# クライアントの再ビルドと起動
+rebuild-web:
+	@echo "Rebuilding web and starting application..."
+	docker compose down
+	docker compose build --no-cache web
 	make dev
 
 # 依存関係の更新
@@ -412,7 +424,6 @@ copy-files:
 		exit 1; \
 	fi
 	@./copyfiles $(dir)
-
 
 ```
 
