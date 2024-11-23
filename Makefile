@@ -1,4 +1,4 @@
-.PHONY: check-env setup run stop clean build-data re dev build rebuild copy-files
+.PHONY: check-env setup run stop clean build-data re dev build rebuild-server rebuild-web copy-files
 
 # 環境変数のチェック
 check-env:
@@ -61,10 +61,17 @@ re:
 	make dev
 
 # サーバーの再ビルドと起動
-rebuild:
+rebuild-server:
 	@echo "Rebuilding server and starting application..."
 	docker compose down
 	docker compose build --no-cache server
+	make dev
+
+# クライアントの再ビルドと起動
+rebuild-web:
+	@echo "Rebuilding web and starting application..."
+	docker compose down
+	docker compose build --no-cache web
 	make dev
 
 # 依存関係の更新
