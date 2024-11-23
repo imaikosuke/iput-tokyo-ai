@@ -7,6 +7,10 @@ import { QuestionForm } from "./QuestionForm";
 import { FAQTemplates } from "./FAQTemplates";
 import { AnswerDisplay } from "./AnswerDisplay";
 
+interface APIResponse {
+  answer: string;
+}
+
 export default function ApplicationLayout() {
   const [answer, setAnswer] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -27,8 +31,8 @@ export default function ApplicationLayout() {
         throw new Error(`APIエラー: ${response.status}`);
       }
 
-      const data = await response.text();
-      setAnswer(data);
+      const data = (await response.json()) as APIResponse;
+      setAnswer(data.answer);
     } catch (err) {
       console.error(err);
       setAnswer("エラーが発生しました。もう一度お試しください。");

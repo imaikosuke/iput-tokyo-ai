@@ -128,6 +128,11 @@ func (rs *ragServer) addDocumentsHandler(w http.ResponseWriter, req *http.Reques
 		"message": fmt.Sprintf("Successfully added %d document chunks", len(allObjects)),
 	})
 }
+
+type Response struct {
+	Answer string `json:"answer"`
+}
+
 func (rs *ragServer) queryHandler(w http.ResponseWriter, req *http.Request) {
 	type queryRequest struct {
 		Content string
@@ -162,9 +167,9 @@ func (rs *ragServer) queryHandler(w http.ResponseWriter, req *http.Request) {
 			}},
 		).
 		WithNearVector(
-				gql.NearVectorArgBuilder().
-					WithVector(rsp.Embedding.Values).
-					WithCertainty(0.7)).
+			gql.NearVectorArgBuilder().
+				WithVector(rsp.Embedding.Values).
+				WithCertainty(0.7)).
 		WithLimit(5).
 		Do(rs.ctx)
 
@@ -208,5 +213,5 @@ func (rs *ragServer) queryHandler(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	renderJSON(w, strings.Join(respTexts, "\n"))
+	renderJSON(w, Response{Answer: strings.Join(respTexts, "\n")})
 }
