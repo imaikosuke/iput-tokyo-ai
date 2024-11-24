@@ -1,50 +1,45 @@
-'use client'
+// web/src/features/application/FAQTemplates.tsx
+"use client";
 
-import { useState, useEffect, useRef } from 'react'
-import { motion } from 'framer-motion'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { MessageCircleQuestionIcon as QuestionMarkCircle, Building, DiffIcon, Lightbulb, Users } from 'lucide-react'
+import { useState, useEffect, useRef } from "react";
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { MessageCircleQuestionIcon as QuestionMarkCircle } from "lucide-react";
+import { faqData } from "@/types/faq";
 
 interface FAQTemplatesProps {
-  onQuestionSelect: (question: string) => void
-  isAnswerDisplayed: boolean
+  onQuestionSelect: (question: string, predefinedAnswer?: string) => void;
+  isAnswerDisplayed: boolean;
 }
 
-const faqQuestions = [
-  { question: "東京国際工科専門職大学とは？", icon: Building },
-  { question: "一般的な大学や専門学校と何が違いますか？", icon: DiffIcon },
-  { question: "特徴はなんですか？", icon: Lightbulb },
-  { question: "どんな人に向いていますか？", icon: Users }
-]
-
 export function FAQTemplates({ onQuestionSelect, isAnswerDisplayed }: FAQTemplatesProps) {
-  const [isSingleColumn, setIsSingleColumn] = useState(false)
-  const containerRef = useRef<HTMLDivElement>(null)
+  const [isSingleColumn, setIsSingleColumn] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const checkOverflow = () => {
       if (containerRef.current) {
-        const buttons = containerRef.current.querySelectorAll('button')
-        let hasOverflow = false
+        const buttons = containerRef.current.querySelectorAll("button");
+        let hasOverflow = false;
 
         buttons.forEach((button) => {
           if (button.scrollWidth > button.clientWidth) {
-            hasOverflow = true
+            hasOverflow = true;
           }
-        })
+        });
 
-        setIsSingleColumn(hasOverflow || isAnswerDisplayed)
+        setIsSingleColumn(hasOverflow || isAnswerDisplayed);
       }
-    }
+    };
 
-    checkOverflow()
-    window.addEventListener('resize', checkOverflow)
+    checkOverflow();
+    window.addEventListener("resize", checkOverflow);
 
     return () => {
-      window.removeEventListener('resize', checkOverflow)
-    }
-  }, [isAnswerDisplayed])
+      window.removeEventListener("resize", checkOverflow);
+    };
+  }, [isAnswerDisplayed]);
 
   return (
     <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
@@ -61,11 +56,9 @@ export function FAQTemplates({ onQuestionSelect, isAnswerDisplayed }: FAQTemplat
           </h2>
           <div
             ref={containerRef}
-            className={`grid gap-2 ${
-              isSingleColumn ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'
-            }`}
+            className={`grid gap-2 ${isSingleColumn ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2"}`}
           >
-            {faqQuestions.map(({ question, icon: Icon }, index) => (
+            {faqData.map(({ question, answer, icon: Icon }, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 20 }}
@@ -75,7 +68,7 @@ export function FAQTemplates({ onQuestionSelect, isAnswerDisplayed }: FAQTemplat
                 <Button
                   variant="outline"
                   className="w-full text-left justify-start h-auto py-2 px-4 shadow-sm hover:shadow-md transition-shadow duration-300"
-                  onClick={() => onQuestionSelect(question)}
+                  onClick={() => onQuestionSelect(question, answer)}
                 >
                   <Icon className="mr-2 h-4 w-4 flex-shrink-0" />
                   <span className="text-sm">{question}</span>
@@ -86,6 +79,5 @@ export function FAQTemplates({ onQuestionSelect, isAnswerDisplayed }: FAQTemplat
         </motion.div>
       </CardContent>
     </Card>
-  )
+  );
 }
-

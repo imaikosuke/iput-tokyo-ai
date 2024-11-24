@@ -22,10 +22,20 @@ export default function ApplicationLayout() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [pastQnAs, setPastQnAs] = useState<QnA[]>([]);
 
-  const handleSubmit = async (question: string) => {
+  const handleSubmit = async (question: string, predefinedAnswer?: string) => {
     setIsLoading(true);
     setAnswer(null);
+
+    // FAQの場合は事前に用意した回答を表示
+    if (predefinedAnswer) {
+      setAnswer(predefinedAnswer);
+      setPastQnAs((prev) => [...prev, { question, answer: predefinedAnswer }]);
+      setIsLoading(false);
+      return;
+    }
+
     try {
+      // 通常の質問の場合はAPI呼び出し
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/query/`, {
         method: "POST",
         headers: {
@@ -40,7 +50,7 @@ export default function ApplicationLayout() {
 
       const data = (await response.json()) as APIResponse;
       setAnswer(data.answer);
-      setPastQnAs(prev => [...prev, { question, answer: data.answer }]);
+      setPastQnAs((prev) => [...prev, { question, answer: data.answer }]);
     } catch (err) {
       console.error(err);
       setAnswer("エラーが発生しました。もう一度お試しください。");
@@ -50,8 +60,8 @@ export default function ApplicationLayout() {
   };
 
   const handlePastQuestionClick = (qna: QnA) => {
-    setAnswer(qna.answer)
-  }
+    setAnswer(qna.answer);
+  };
 
   return (
     <motion.div

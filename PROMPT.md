@@ -13,9 +13,12 @@ IPUT は最近新設された専門職大学です。
 
 - Web
   - TypeScript
-  - Next.js(App Router)
+  - Next.js15(App Router)
   - TailwindCSS
   - shadcn/ui
+  - framer-motion
+  - react-hook-form
+  - zod
 - Server
   - Go
   - Gemini API SDK
@@ -157,17 +160,20 @@ iput-tokyo-ai % tree -I "node_modules|.git|.next" -a
     │   │   │   ├── ApplicationLayout.tsx
     │   │   │   ├── ApplicationTitle.tsx
     │   │   │   ├── FAQTemplates.tsx
+    │   │   │   ├── PastQuestions.tsx
     │   │   │   └── QuestionForm.tsx
     │   │   └── home
     │   │       ├── AppButton.tsx
     │   │       ├── AppLogo.tsx
     │   │       └── CircleIcon.tsx
-    │   └── lib
-    │       └── utils.ts
+    │   ├── lib
+    │   │   └── utils.ts
+    │   └── types
+    │       └── faq.ts
     ├── tailwind.config.ts
     └── tsconfig.json
 
-30 directories, 105 files
+31 directories, 107 files
 ```
 
 iput-tokyo-ai/server/Dockerfile
