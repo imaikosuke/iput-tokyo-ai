@@ -6,6 +6,12 @@ import { motion } from "framer-motion";
 import { QuestionForm } from "./QuestionForm";
 import { FAQTemplates } from "./FAQTemplates";
 import { AnswerDisplay } from "./AnswerDisplay";
+import { PastQuestions } from "./PastQuestions";
+
+interface QnA {
+  question: string;
+  answer: string;
+}
 
 interface APIResponse {
   answer: string;
@@ -14,6 +20,7 @@ interface APIResponse {
 export default function ApplicationLayout() {
   const [answer, setAnswer] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [pastQnAs, setPastQnAs] = useState<QnA[]>([]);
 
   const handleSubmit = async (question: string) => {
     setIsLoading(true);
@@ -33,6 +40,7 @@ export default function ApplicationLayout() {
 
       const data = (await response.json()) as APIResponse;
       setAnswer(data.answer);
+      setPastQnAs(prev => [...prev, { question, answer: data.answer }]);
     } catch (err) {
       console.error(err);
       setAnswer("エラーが発生しました。もう一度お試しください。");
@@ -40,6 +48,10 @@ export default function ApplicationLayout() {
       setIsLoading(false);
     }
   };
+
+  const handlePastQuestionClick = (qna: QnA) => {
+    setAnswer(qna.answer)
+  }
 
   return (
     <motion.div
@@ -51,6 +63,7 @@ export default function ApplicationLayout() {
       <div className="flex-1 space-y-8">
         <QuestionForm onSubmit={handleSubmit} />
         <FAQTemplates onQuestionSelect={handleSubmit} isAnswerDisplayed={true} />
+        <PastQuestions pastQnAs={pastQnAs} onQuestionClick={handlePastQuestionClick} />
       </div>
       <AnswerDisplay answer={answer} isLoading={isLoading} />
     </motion.div>
